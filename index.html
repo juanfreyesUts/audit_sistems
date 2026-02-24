@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consulta: ISO y Auditorías</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Vue 3 (CDN) -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900">
+  <div id="app" class="max-w-5xl mx-auto p-6">
+    <!-- Header -->
+    <header class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold tracking-tight">
+        Consulta: ISO y Auditorías de Calidad
+      </h1>
+      <p class="mt-2 text-gray-600">
+        Preguntas y respuestas organizadas para entrega en formato página web.
+      </p>
+
+      <div class="mt-4 flex flex-col md:flex-row gap-2 md:gap-6 text-sm text-gray-600">
+        <span><strong class="text-gray-800">Autor:</strong> Juan Fernando Reyes Neira ; Joham Eliasid Osorio Quintero ; Jhon Ederson Jaimes</span>
+        <span><strong class="text-gray-800">Curso:</strong> E195</span>
+        <span><strong class="text-gray-800">Fecha:</strong> 20/02/2026</span>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="mt-6 grid gap-6">
+      <!-- Preguntas -->
+      <section class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <h2 class="text-lg font-semibold">Preguntas</h2>
+
+          <div class="flex gap-2 flex-wrap">
+            <button
+              @click="expandAll"
+              class="px-4 py-2 rounded-xl bg-gray-900 text-white hover:opacity-95 transition"
+              type="button"
+            >
+              Expandir todo
+            </button>
+            <button
+              @click="collapseAll"
+              class="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 hover:bg-gray-50 transition"
+              type="button"
+            >
+              Contraer todo
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <input
+            v-model="query"
+            type="search"
+            placeholder="Buscar por palabra clave (ej: alcance, ISO, hallazgo)..."
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-gray-900/15 focus:border-gray-400"
+          />
+          <p class="mt-2 text-sm text-gray-500">
+            Tip: escribe “no conformidad”, “criterios”, “Ley 1581”… y filtra rápido.
+          </p>
+        </div>
+
+        <!-- Lista -->
+        <div class="mt-5 grid gap-3">
+          <article
+            v-for="(item, idx) in filteredItems"
+            :key="item.id"
+            class="border border-gray-200 rounded-2xl overflow-hidden"
+          >
+            <button
+              @click="toggle(idx)"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 transition px-4 py-4 flex items-center gap-3"
+              type="button"
+            >
+              <span class="font-bold text-gray-900 w-7 shrink-0">{{ item.id }}.</span>
+              <span class="font-semibold text-gray-900 flex-1 leading-snug">
+                {{ item.q }}
+              </span>
+
+              <span
+                class="text-gray-500 text-lg transition-transform"
+                :class="isOpenByFilteredIndex(idx) ? 'rotate-180' : ''"
+                aria-hidden="true"
+              >▾</span>
+            </button>
+
+            <div v-show="isOpenByFilteredIndex(idx)" class="bg-white border-t border-gray-200 px-5 py-4">
+              <div class="space-y-3 text-gray-800 leading-relaxed">
+                <p v-for="(p, i) in item.a" :key="i">{{ p }}</p>
+
+                <ul v-if="item.bullets && item.bullets.length" class="list-disc pl-5 space-y-1">
+                  <li v-for="(b, bi) in item.bullets" :key="bi">{{ b }}</li>
+                </ul>
+
+                <div v-if="item.note" class="mt-3 rounded-xl bg-gray-50 border border-gray-200 p-4">
+                  <p><strong class="text-gray-900">Nota:</strong> {{ item.note }}</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <p v-if="filteredItems.length === 0" class="text-sm text-gray-500">
+            No hay resultados para tu búsqueda.
+          </p>
+        </div>
+      </section>
+
+      <!-- Conclusión -->
+      <section class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <h2 class="text-lg font-semibold">Conclusión breve</h2>
+        <p class="mt-3 text-gray-800 leading-relaxed">
+          La ISO crea estándares internacionales para mejorar la calidad y la consistencia.
+          Las auditorías (internas o externas) verifican si una organización cumple criterios definidos,
+          detectando hallazgos, conformidades, no conformidades y oportunidades de mejora para fortalecer
+          el sistema de gestión.
+        </p>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center text-sm text-gray-500">
+        Hecho en Vue & Tailwind css
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          query: "",
+          // Guardamos índices REALES (del array items), no del filtrado
+          openIndexes: new Set(),
+          items: [
+            {
+              id: 1,
+              q: "¿Qué es y de qué se encarga la ISO?",
+              a: [
+                "La ISO (International Organization for Standardization) es una organización internacional independiente que desarrolla y publica normas (estándares) para productos, servicios y sistemas.",
+                "Su función principal es ayudar a que las organizaciones trabajen con mayor calidad, seguridad y eficiencia, facilitando además el comercio y la compatibilidad entre países."
+              ],
+              bullets: [
+                "Crea normas voluntarias (por ejemplo, ISO 9001 para gestión de calidad).",
+                "Promueve buenas prácticas y mejora continua.",
+                "Facilita que procesos y productos sean comparables y confiables."
+              ]
+            },
+            {
+              id: 2,
+              q: "¿Qué es una auditoría interna y qué es una auditoría externa?",
+              a: [
+                "Una auditoría interna la realiza la misma organización (o un auditor contratado por ella) para evaluar su propio sistema, detectar fallas y preparar mejoras. Es una herramienta de control y mejora.",
+                "Una auditoría externa la realiza un organismo externo independiente. Puede ser de clientes/proveedores o de certificación (por ejemplo, para obtener o mantener una certificación ISO)."
+              ],
+              bullets: [
+                "Interna: enfoque de mejora y autocontrol.",
+                "Externa: validación independiente (cliente / certificadora / tercera parte)."
+              ]
+            },
+            {
+              id: 3,
+              q: "¿Qué es la documentación de referencia en una auditoría?",
+              a: [
+                "Es el conjunto de documentos que se usan como base para comparar y verificar el cumplimiento durante la auditoría.",
+                "Incluye normas aplicables (ISO), políticas internas, procedimientos, manuales, registros, requisitos legales, requisitos del cliente y cualquier criterio definido para evaluar el sistema."
+              ],
+              bullets: [
+                "Normas y requisitos (ISO, legales, contractuales).",
+                "Documentos internos (procedimientos, instructivos, políticas).",
+                "Registros (evidencias: formatos, reportes, actas, trazabilidad)."
+              ]
+            },
+            {
+              id: 4,
+              q: "¿Qué es el alcance de una auditoría?",
+              a: [
+                "El alcance define qué se va a auditar y hasta dónde llega la auditoría.",
+                "Describe límites y cobertura: áreas, procesos, sedes, productos/servicios, periodos, y qué norma o requisitos se evaluarán."
+              ],
+              note:
+                "Si el alcance está mal definido, la auditoría puede quedarse corta (no detectar problemas) o volverse inmanejable."
+            },
+            {
+              id: 5,
+              q: "¿De qué se encarga el auditor de calidad?",
+              a: [
+                "El auditor de calidad planifica y ejecuta auditorías para verificar si los procesos cumplen criterios (normas, requisitos legales, procedimientos internos).",
+                "Su trabajo es evaluar con evidencia objetiva, reportar hallazgos y apoyar la mejora (sin “inventar” problemas: todo debe sustentarse con evidencia)."
+              ],
+              bullets: [
+                "Planificar auditorías (programa, plan, checklist).",
+                "Revisar evidencias y entrevistar responsables.",
+                "Registrar hallazgos (conformidades, no conformidades, oportunidades).",
+                "Elaborar y presentar informes claros."
+              ]
+            },
+            {
+              id: 6,
+              q: "¿Qué es el programa de auditoría?",
+              a: [
+                "Es la planificación global de auditorías para un periodo (por ejemplo, anual o semestral).",
+                "Define qué auditorías se harán, cuándo, con qué criterios, en qué procesos/áreas, y quién será responsable."
+              ],
+              bullets: [
+                "Calendario y frecuencia de auditorías.",
+                "Procesos/áreas a auditar y prioridades según riesgos.",
+                "Recursos: auditores, tiempos, alcance y objetivos."
+              ]
+            },
+            {
+              id: 7,
+              q: "¿Cómo se puede definir el concepto de criterios de una auditoría?",
+              a: [
+                "Los criterios de auditoría son las reglas o requisitos contra los cuales se compara la evidencia encontrada.",
+                "En otras palabras: es el “deber ser” (normas ISO, procedimientos internos, leyes, requisitos del cliente) que permite decidir si algo cumple o no cumple."
+              ]
+            },
+            {
+              id: 8,
+              q: "¿Qué es el hallazgo de la auditoría?",
+              a: [
+                "Un hallazgo es el resultado de la evaluación de la evidencia frente a los criterios de auditoría.",
+                "Puede ser una conformidad (cumple), una no conformidad (no cumple) o una oportunidad de mejora (podría mejorar sin ser incumplimiento)."
+              ],
+              bullets: [
+                "Siempre debe basarse en evidencia objetiva (registros, observación, entrevistas).",
+                "Debe estar relacionado con un criterio específico."
+              ]
+            },
+            {
+              id: 9,
+              q: "¿Qué es una conformidad en una auditoría?",
+              a: [
+                "Una conformidad es cuando la evidencia demuestra que un requisito se cumple correctamente.",
+                "Ejemplo: existe un procedimiento, se aplica como está definido y hay registros que lo demuestran."
+              ]
+            },
+            {
+              id: 10,
+              q: "¿Qué es una no conformidad en una auditoría?",
+              a: [
+                "Una no conformidad es el incumplimiento de un requisito (de una norma ISO, requisito legal, procedimiento interno o requisito del cliente).",
+                "Se presenta cuando falta algo obligatorio, se hace distinto a lo definido, o no hay evidencia que pruebe el cumplimiento."
+              ],
+              bullets: [
+                "Puede ser por ausencia de procedimiento o por no seguirlo.",
+                "Puede ser por registros incompletos o inexistentes.",
+                "Puede ser por incumplir un requisito legal o contractual."
+              ]
+            },
+            {
+              id: 11,
+              q: "¿Qué es una oportunidad de mejora en una auditoría?",
+              a: [
+                "Es una recomendación que sugiere cómo mejorar un proceso, aunque actualmente no sea un incumplimiento.",
+                "Busca hacer el sistema más robusto, eficiente o preventivo, reduciendo riesgos futuros."
+              ],
+              note:
+                "Ojo: oportunidad de mejora ≠ no conformidad. La primera no implica incumplimiento; la segunda sí."
+            },
+            {
+              id: 12,
+              q: "¿De qué se encarga la Ley 1581 de 2012 en Colombia?",
+              a: [
+                "La Ley 1581 de 2012 es la norma base de protección de datos personales en Colombia.",
+                "Regula cómo se recolectan, almacenan, usan, comparten y eliminan datos personales, y protege derechos del titular (conocer, actualizar, rectificar y solicitar supresión, entre otros)."
+              ],
+              bullets: [
+                "Exige autorización del titular (salvo excepciones legales).",
+                "Obliga a informar finalidades del tratamiento de datos.",
+                "Exige medidas de seguridad y confidencialidad.",
+                "Permite al titular ejercer derechos sobre sus datos (Habeas Data)."
+              ]
+            }
+          ]
+        };
+      },
+
+      computed: {
+        filteredItems() {
+          const q = (this.query || "").trim().toLowerCase();
+          if (!q) return this.items;
+
+          return this.items.filter((it) => {
+            const text = [
+              it.q,
+              ...(it.a || []),
+              ...(it.bullets || []),
+              it.note || ""
+            ]
+              .join(" ")
+              .toLowerCase();
+
+            return text.includes(q);
+          });
+        }
+      },
+
+      methods: {
+        // Devuelve el índice real en this.items para un elemento del filtrado
+        realIndexFromFilteredIndex(filteredIndex) {
+          const item = this.filteredItems[filteredIndex];
+          return this.items.findIndex((x) => x.id === item.id);
+        },
+
+        isOpenByFilteredIndex(filteredIndex) {
+          const realIndex = this.realIndexFromFilteredIndex(filteredIndex);
+          return this.openIndexes.has(realIndex);
+        },
+
+        toggle(filteredIndex) {
+          const realIndex = this.realIndexFromFilteredIndex(filteredIndex);
+          const set = new Set(this.openIndexes);
+
+          if (set.has(realIndex)) set.delete(realIndex);
+          else set.add(realIndex);
+
+          this.openIndexes = set;
+        },
+
+        expandAll() {
+          this.openIndexes = new Set(this.items.map((_, i) => i));
+        },
+
+        collapseAll() {
+          this.openIndexes = new Set();
+        }
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>
